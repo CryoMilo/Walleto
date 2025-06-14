@@ -49,7 +49,10 @@ app.get("/api/transactions", async (req, res) => {
 
 		res.json({ message: "Success", data: transactionData });
 	} catch (error) {
-		console.log("Error getting transaction list");
+		console.error("Error while getting transaction list", error);
+		res
+			.status(500)
+			.json({ message: "Something went wrong", error: error.message });
 	}
 });
 
@@ -61,7 +64,10 @@ app.get("/api/transactions/:userId", async (req, res) => {
 			await sql`SELECT * FROM transactions WHERE user_id = ${userId} ORDER BY created_at DESC`;
 		res.status(200).json({ message: "Success", data: transactionData });
 	} catch (error) {
-		console.log("Error getting transaction data");
+		console.error("Error while getting transaction data", error);
+		res
+			.status(500)
+			.json({ message: "Something went wrong", error: error.message });
 	}
 });
 
@@ -78,7 +84,10 @@ app.delete("/api/transactions/:id", async (req, res) => {
 
 		res.status(200).json({ message: "Transaction Deleted Successfully" });
 	} catch (error) {
-		console.log("Error deleting transaction");
+		console.error("Error while delete data", error);
+		res
+			.status(500)
+			.json({ message: "Something went wrong", error: error.message });
 	}
 });
 
@@ -101,7 +110,35 @@ app.post("/api/transactions", async (req, res) => {
 			.status(201)
 			.json({ message: "New Transaction Created", data: transaction });
 	} catch (error) {
-		console.log("Error while creating data");
+		console.error("Error while creating data", error);
+		res
+			.status(500)
+			.json({ message: "Something went wrong", error: error.message });
+	}
+});
+
+// UPDATE TRANSACTIONS
+app.put("/api/transactions/:id", async (req, res) => {
+	try {
+		const { id } = req.params;
+		const { title, amount, category, user_id } = req.body;
+
+		if (!title || amount === undefined || !category || !user_id) {
+			return res.status(400).json({ message: "Missing required fields" });
+		}
+
+		const updatedTransaction = await sql`
+		UPDATE transactions SET title=${title}, amount=${amount}, category=${category}, user_id=${user_id} WHERE id= ${id} RETURNING *
+		`;
+
+		res
+			.status(201)
+			.json({ message: "Transaction Updated", data: updatedTransaction });
+	} catch (error) {
+		console.error("Error while updating data", error);
+		res
+			.status(500)
+			.json({ message: "Something went wrong", error: error.message });
 	}
 });
 
