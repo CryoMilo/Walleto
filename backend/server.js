@@ -142,6 +142,32 @@ app.put("/api/transactions/:id", async (req, res) => {
 	}
 });
 
+app.get("/api/transactions/summary/:userId", async (req, res) => {
+	try {
+		const { userId } = req.params;
+
+		const balanceResult = await sql`
+		SELECT COALESCE(sum(amount), 0) as balance FROM transactions WHERE user_id = ${userId} 
+		`;
+
+		const incomeResult = await sql`
+		SELECT COALESCE(sum(amount) , 0) as income FROM transactions WHERE user_id = ${userId} AND amount > 0
+		`;
+
+		const expenseResult = await sql`
+		SELECT COALESCE(sum(amount) , 0) as expense FROM transactions WHERE user_id = ${userId} AND amount < 0
+		`;
+
+		res.status(200).json({
+			data: {
+				balance: balanceResult[0].balance,
+				income: incomeResult[0].income,
+				expense: expenseResult[0].expense,
+			},
+		});
+	} catch (error) {}
+});
+
 initializeDB().then(() => {
 	app.listen(port, () => {
 		console.log("Express App Is Running in Port", port);
